@@ -53,7 +53,7 @@ pub(super) const FE: YearFlags = YearFlags(0o07);
 pub(super) const G: YearFlags = YearFlags(0o16);
 pub(super) const GF: YearFlags = YearFlags(0o06);
 
-static YEAR_TO_FLAGS: [YearFlags; 400] = [
+const YEAR_TO_FLAGS: [YearFlags; 400] = [
     BA, G, F, E, DC, B, A, G, FE, D, C, B, AG, F, E, D, CB, A, G, F, ED, C, B, A, GF, E, D, C, BA,
     G, F, E, DC, B, A, G, FE, D, C, B, AG, F, E, D, CB, A, G, F, ED, C, B, A, GF, E, D, C, BA, G,
     F, E, DC, B, A, G, FE, D, C, B, AG, F, E, D, CB, A, G, F, ED, C, B, A, GF, E, D, C, BA, G, F,
@@ -114,13 +114,16 @@ impl YearFlags {
     #[allow(unreachable_pub)] // public as an alias for benchmarks only
     #[doc(hidden)] // for benchmarks only
     #[inline]
-    pub fn from_year(year: i32) -> YearFlags {
-        let year = mod_floor(year, 400);
-        YearFlags::from_year_mod_400(year)
+    pub const fn from_year(year: i32) -> YearFlags {
+        let mut r = year % 400;
+        if r < 0 {
+            r += 400;
+        }
+        YearFlags::from_year_mod_400(r)
     }
 
     #[inline]
-    pub(super) fn from_year_mod_400(year: i32) -> YearFlags {
+    pub(super) const fn from_year_mod_400(year: i32) -> YearFlags {
         YEAR_TO_FLAGS[year as usize]
     }
 
@@ -177,7 +180,7 @@ pub(super) const MAX_OL: u32 = 366 << 1; // larger than the non-leap last day `(
 pub(super) const MAX_MDL: u32 = (12 << 6) | (31 << 1) | 1;
 
 const XX: i8 = -128;
-static MDL_TO_OL: [i8; MAX_MDL as usize + 1] = [
+const MDL_TO_OL: [i8; MAX_MDL as usize + 1] = [
     XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
     XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
     XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, // 0
@@ -285,16 +288,16 @@ impl Of {
     }
 
     #[inline]
-    pub(super) fn from_mdf(Mdf(mdf): Mdf) -> Of {
+    pub(super) const fn from_mdf(Mdf(mdf): Mdf) -> Of {
         let mdl = mdf >> 3;
         match MDL_TO_OL.get(mdl as usize) {
-            Some(&v) => Of(mdf.wrapping_sub((i32::from(v) as u32 & 0x3ff) << 3)),
+            Some(&v) => Of(mdf.wrapping_sub((v as u32 & 0x3ff) << 3)),
             None => Of(0),
         }
     }
 
     #[inline]
-    pub(super) fn valid(&self) -> bool {
+    pub(super) const fn valid(&self) -> bool {
         let Of(of) = *self;
         let ol = of >> 3;
         MIN_OL <= ol && ol <= MAX_OL
@@ -375,7 +378,7 @@ pub(super) struct Mdf(pub(super) u32);
 
 impl Mdf {
     #[inline]
-    fn clamp_month(month: u32) -> u32 {
+    const fn clamp_month(month: u32) -> u32 {
         if month > 12 {
             0
         } else {
@@ -384,7 +387,7 @@ impl Mdf {
     }
 
     #[inline]
-    fn clamp_day(day: u32) -> u32 {
+    const fn clamp_day(day: u32) -> u32 {
         if day > 31 {
             0
         } else {
@@ -393,10 +396,10 @@ impl Mdf {
     }
 
     #[inline]
-    pub(super) fn new(month: u32, day: u32, YearFlags(flags): YearFlags) -> Mdf {
+    pub(super) const fn new(month: u32, day: u32, YearFlags(flags): YearFlags) -> Mdf {
         let month = Mdf::clamp_month(month);
         let day = Mdf::clamp_day(day);
-        Mdf((month << 9) | (day << 4) | u32::from(flags))
+        Mdf((month << 9) | (day << 4) | flags as u32)
     }
 
     #[inline]
@@ -452,7 +455,7 @@ impl Mdf {
 
     #[cfg_attr(feature = "cargo-clippy", allow(clippy::wrong_self_convention))]
     #[inline]
-    pub(super) fn to_of(&self) -> Of {
+    pub(super) const fn to_of(&self) -> Of {
         Of::from_mdf(*self)
     }
 }

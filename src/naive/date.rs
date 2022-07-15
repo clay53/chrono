@@ -205,7 +205,7 @@ fn test_date_bounds() {
 
 impl NaiveDate {
     /// Makes a new `NaiveDate` from year and packed ordinal-flags, with a verification.
-    fn from_of(year: i32, of: Of) -> Option<NaiveDate> {
+    const fn from_of(year: i32, of: Of) -> Option<NaiveDate> {
         if year >= MIN_YEAR && year <= MAX_YEAR && of.valid() {
             let Of(of) = of;
             Some(NaiveDate { ymdf: (year << 13) | (of as DateImpl) })
@@ -215,7 +215,7 @@ impl NaiveDate {
     }
 
     /// Makes a new `NaiveDate` from year and packed month-day-flags, with a verification.
-    fn from_mdf(year: i32, mdf: Mdf) -> Option<NaiveDate> {
+    const fn from_mdf(year: i32, mdf: Mdf) -> Option<NaiveDate> {
         NaiveDate::from_of(year, mdf.to_of())
     }
 
@@ -239,7 +239,7 @@ impl NaiveDate {
     /// assert_eq!(d.weekday(), Weekday::Sat);
     /// assert_eq!(d.num_days_from_ce(), 735671); // days since January 1, 1 CE
     /// ```
-    pub fn from_ymd(year: i32, month: u32, day: u32) -> NaiveDate {
+    pub const fn from_ymd(year: i32, month: u32, day: u32) -> NaiveDate {
         NaiveDate::from_ymd_opt(year, month, day).expect("invalid or out-of-range date")
     }
 
@@ -262,7 +262,7 @@ impl NaiveDate {
     /// assert!(from_ymd_opt(400000, 1, 1).is_none());
     /// assert!(from_ymd_opt(-400000, 1, 1).is_none());
     /// ```
-    pub fn from_ymd_opt(year: i32, month: u32, day: u32) -> Option<NaiveDate> {
+    pub const fn from_ymd_opt(year: i32, month: u32, day: u32) -> Option<NaiveDate> {
         let flags = YearFlags::from_year(year);
         NaiveDate::from_mdf(year, Mdf::new(month, day, flags))
     }
